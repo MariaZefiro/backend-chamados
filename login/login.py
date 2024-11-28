@@ -16,23 +16,32 @@ def login():
     conn = get_connection()
     if not conn:
         return jsonify({"message": "Erro ao conectar ao banco de dados"}), 500
-    
+
     cursor = conn.cursor(dictionary=True)
 
     try:
-        # Verifica na tabela colaboradores
         cursor.execute("SELECT * FROM colaboradores WHERE usuario = %s AND senha = %s", (usuario, senha))
         colaborador = cursor.fetchone()
 
         if colaborador:
             return jsonify({"message": "Colaborador autenticado", "tipo": "colaborador", "nome": colaborador['nome']}), 200
 
-        # Verifica na tabela usuarios
-        cursor.execute("SELECT * FROM usuarios WHERE usuario = %s AND senha = %s", (usuario, senha))
+        cursor.execute("""
+            SELECT usuarios.id, usuarios.nome, setores.nome AS setor
+            FROM usuarios
+            JOIN setores ON usuarios.setor = setores.id
+            WHERE usuarios.usuario = %s AND usuarios.senha = %s
+        """, (usuario, senha))
         usuario_bd = cursor.fetchone()
 
         if usuario_bd:
-            return jsonify({"message": "Usuário autenticado", "tipo": "usuario", "nome": usuario_bd['nome']}), 200
+            return jsonify({
+                "message": "Usuário autenticado",
+                "tipo": "usuario",
+                "nome": usuario_bd['nome'],
+                "setor": usuario_bd['setor'],
+                "id": usuario_bd['id']
+            }), 200
 
         return jsonify({"message": "Usuário ou senha incorretos"}), 401
     except Error as e:
