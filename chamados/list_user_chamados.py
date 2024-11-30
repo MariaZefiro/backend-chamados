@@ -3,8 +3,57 @@ from db import get_connection, close_connection
 
 list_user_chamados_bp = Blueprint('list_user_chamados', __name__)
 
-@list_user_chamados_bp.route('/api/list_user_chamados/<int:user_id>', methods=['GET'])
-def list_user_chamados(user_id):
+@list_user_chamados_bp.route('/api/list_user_tickets/<int:colaborador_id>', methods=['GET'])
+def list_user_tickets(colaborador_id):
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        if not conn:
+            raise Exception("Não foi possível obter uma conexão com o banco de dados.")
+
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+          SELECT 
+            c.id AS ticket_id,
+            c.numero,
+            c.titulo,
+            c.setor,
+            c.data,
+            c.status,
+            c.prioridade,
+            u.nome AS usuario_nome
+        FROM 
+            chamado AS c
+        JOIN 
+            colaboradores_chamados AS cc ON c.id = cc.chamado_id
+        JOIN 
+            colaboradores AS col ON cc.colaborador_id = col.id
+        JOIN 
+            usuarios AS u ON c.usuario_id = u.id
+        WHERE 
+            cc.colaborador_id = %s;
+        """
+        cursor.execute(query, (colaborador_id,))
+        tickets = cursor.fetchall()
+
+        return jsonify({"tickets": tickets})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            if conn.is_connected():
+                close_connection(conn)
+            else:
+                print("A conexão não está ativa.")
+
+@list_user_chamados_bp.route('/api/list_chamado_usuario/<int:user_id>', methods=['GET'])
+def list_chamado_usuario(user_id):
     conn = get_connection()
     if not conn:
         return jsonify({"message": "Erro ao conectar ao banco de dados"}), 500

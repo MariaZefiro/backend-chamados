@@ -8,7 +8,7 @@ db_config = {
     'port': db_port,
     'database': db_name,
     'raise_on_warnings': True,
-    'pool_size': 3, 
+    'pool_size': 10, 
 }
 
 def get_connection():

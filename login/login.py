@@ -24,7 +24,7 @@ def login():
         colaborador = cursor.fetchone()
 
         if colaborador:
-            return jsonify({"message": "Colaborador autenticado", "tipo": "colaborador", "nome": colaborador['nome']}), 200
+            return jsonify({"message": "Colaborador autenticado", "tipo": "colaborador", "nome": colaborador['nome'], "id": colaborador['id']}), 200
 
         cursor.execute("""
             SELECT usuarios.id, usuarios.nome, setores.nome AS setor

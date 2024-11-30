@@ -41,3 +41,32 @@ def list_user_chamados():
     finally:
         cursor.close()
         close_connection(conn)
+
+@list_chamados_bp.route('/api/list_colaborador_chamado/<int:chamado_id>', methods=['GET'])
+def list_colaborador_chamado(chamado_id):
+    conn = get_connection()
+    if not conn:
+        return jsonify({"message": "Erro ao conectar ao banco de dados"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT 
+                c.id AS colaborador_id,
+                c.nome AS colaborador
+            FROM 
+                colaboradores_chamados cc
+            INNER JOIN 
+                colaboradores c ON cc.colaborador_id = c.id
+            WHERE 
+                cc.chamado_id = %s
+        """
+        cursor.execute(query, (chamado_id,))
+        colaboradores = cursor.fetchall()
+        return jsonify({"colaboradores": colaboradores}), 200
+    except Exception as e:
+        return jsonify({"message": f"Erro ao buscar colaboradores: {str(e)}"}), 500
+    finally:
+        cursor.close()
+        close_connection(conn)
+    
