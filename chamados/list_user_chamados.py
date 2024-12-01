@@ -19,10 +19,13 @@ def list_user_tickets(colaborador_id):
             c.id AS ticket_id,
             c.numero,
             c.titulo,
+            c.descricao,
             c.setor,
             c.data,
             c.status,
             c.prioridade,
+            c.tipo_de_problema,
+            c.especificacao_problema,
             u.nome AS usuario_nome
         FROM 
             chamado AS c
