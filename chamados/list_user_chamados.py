@@ -16,7 +16,7 @@ def list_user_tickets(colaborador_id):
         
         query = """
           SELECT 
-            c.id AS ticket_id,
+            c.id AS id,
             c.numero,
             c.titulo,
             c.descricao,

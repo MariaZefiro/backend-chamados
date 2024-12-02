@@ -9,10 +9,10 @@ def salvar_edicao_chamado():
     chamado_id = data.get('id')
     status = data.get('status')
     prioridade = data.get('prioridade')
-    colaboradores = data.get('colaboradores', [])  
+    colaboradores = data.get('colaboradores', [])
 
-    if not chamado_id or not status or not prioridade:
-        return jsonify({"message": "Dados incompletos"}), 400
+    if not chamado_id:
+        return jsonify({"message": "ID do chamado é obrigatório"}), 400
 
     conn = get_connection()
     if not conn:
@@ -20,28 +20,44 @@ def salvar_edicao_chamado():
 
     cursor = conn.cursor()
     try:
-        query_update_chamado = """
-            UPDATE chamado
-            SET status = %s, prioridade = %s
-            WHERE id = %s;
-        """
-        cursor.execute(query_update_chamado, (status, prioridade, chamado_id))
+        # Atualizar apenas os campos não nulos
+        update_fields = []
+        update_values = []
 
-        query_delete_colaboradores = """
-            DELETE FROM colaboradores_chamados
-            WHERE chamado_id = %s;
-        """
-        cursor.execute(query_delete_colaboradores, (chamado_id,))
+        if status is not None:
+            update_fields.append("status = %s")
+            update_values.append(status)
+        
+        if prioridade is not None:
+            update_fields.append("prioridade = %s")
+            update_values.append(prioridade)
+        
+        if update_fields:
+            query_update_chamado = f"""
+                UPDATE chamado
+                SET {', '.join(update_fields)}
+                WHERE id = %s;
+            """
+            cursor.execute(query_update_chamado, (*update_values, chamado_id))
 
-        query_insert_colaboradores = """
-            INSERT INTO colaboradores_chamados (chamado_id, colaborador_id)
-            VALUES (%s, %s);
-        """
-        for colaborador_id in colaboradores:
-            cursor.execute(query_insert_colaboradores, (chamado_id, colaborador_id))
+        # Atualizar colaboradores se fornecido
+        if colaboradores:
+            query_delete_colaboradores = """
+                DELETE FROM colaboradores_chamados
+                WHERE chamado_id = %s;
+            """
+            cursor.execute(query_delete_colaboradores, (chamado_id,))
+
+            query_insert_colaboradores = """
+                INSERT INTO colaboradores_chamados (chamado_id, colaborador_id)
+                VALUES (%s, %s);
+            """
+            for colaborador_id in colaboradores:
+                cursor.execute(query_insert_colaboradores, (chamado_id, colaborador_id))
 
         conn.commit()
 
+        # Retornar o chamado atualizado
         query_fetch_chamado = """
             SELECT c.id, c.status, c.prioridade, c.titulo, c.setor, c.usuario_id, c.data
             FROM chamado c
